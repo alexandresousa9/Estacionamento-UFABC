@@ -39,7 +39,7 @@ FOREIGN KEY (cod_usuario) REFERENCES tb_usuario(cod_usuario));
 
 DELIMITER //
 create PROCEDURE sp_users_list(IN pcod_usuario VARCHAR(20))
-USE db_estacionamento_ufabc;
+
 BEGIN
 	IF pcod_usuario = -1 THEN
 	
