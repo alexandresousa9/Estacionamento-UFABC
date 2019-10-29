@@ -1,0 +1,123 @@
+
+1º Etapa
+
+apt-get update
+apt-get upgrade
+
+apt-get install apache2
+
+apt-get install python3-dev
+
+apt-get install libapache2-mod-wsgi-py3
+
+sudo a2enmod wsgi 
+
+.Página WEB deve ficar disponível para navegação.
+
+2º Etapa
+
+cd /var/www 
+sudo mkdir FlaskApp
+cd FlaskApp
+sudo mkdir FlaskApp
+cd FlaskApp
+sudo mkdir static templates
+sudo nano __init__.py 
+
+Usar o conteúdo abaixo no arquivo:
+
+from flask import Flask
+app = Flask(__name__)
+@app.route("/")
+def hello():
+    return "Hello, I love Digital Ocean!"
+if __name__ == "__main__":
+    app.run()
+
+
+3º Etapa
+
+sudo apt-get install python3-pip
+
+sudo pip3 install virtualenv 
+
+Retorna em qual diretório o python encontra-se.
+which python3
+
+constroi um ambiente virtual utilizando o python3
+sudo virtualenv --python='/usr/bin/python3' venv
+
+source venv/bin/activate
+sudo pip3 install Flask 
+
+sudo python3 __init__.py 
+
+deactivate
+
+4º Etapa
+
+sudo nano /etc/apache2/sites-available/FlaskApp
+
+
+<VirtualHost *:80>
+		ServerName 34.95.241.108
+		ServerAdmin admin@mywebsite.com
+		WSGIScriptAlias /UFABC /var/www/FlaskApp/flaskapp.wsgi
+		<Directory /var/www/FlaskApp/FlaskApp/>
+			Order allow,deny
+			Allow from all
+		</Directory>
+		Alias /static /var/www/FlaskApp/FlaskApp/static
+		<Directory /var/www/FlaskApp/FlaskApp/static/>
+			Order allow,deny
+			Allow from all
+		</Directory>
+		ErrorLog ${APACHE_LOG_DIR}/error.log
+		LogLevel warn
+		CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+
+sudo a2ensite FlaskApp
+
+
+5º Etapa
+
+cd /var/www/FlaskApp
+sudo nano flaskapp.wsgi 
+
+#!/usr/bin/python3
+
+import sys
+import logging
+logging.basicConfig(stream=sys.stderr)
+sys.path.insert(0,"/var/www/FlaskApp/")
+
+from FlaskApp import app as application
+application.secret_key = 'chavesecreta'
+
+
+6º Etapa
+
+sudo service apache2 restart 
+
+
+7º Etapa
+
+Instalar mysql
+sudo apt-get update
+sudo apt-get install mysql-server
+mysql_secure_installation
+
+
+Senha root: youtube200903
+
+source /home/alexandresousasantos977/Repository-GIT/Estacionamento-UFABC/script_create_database_ufabc.sql
+
+/var/log/apache2
+
+1698 (28000) Access denield for user 'root'@'localhost'	
+
+
+
+
