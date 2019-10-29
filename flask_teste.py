@@ -68,7 +68,7 @@ def api_filter_user():
 
 	cod_usuario = query_parameters.get('cod_usuario')
 	
-	cnx = mysql.connector.connect(user='root', passwd='youtube200903', database='db_estacionamento_ufabc')
+	cnx = mysql.connector.connect(user='root', passwd='', database='db_estacionamento_ufabc')
 	cursor = cnx.cursor()
 
 	if not cod_usuario:
