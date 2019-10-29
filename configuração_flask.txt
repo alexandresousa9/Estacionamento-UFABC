@@ -118,6 +118,24 @@ source /home/alexandresousasantos977/Repository-GIT/Estacionamento-UFABC/script_
 
 1698 (28000) Access denield for user 'root'@'localhost'	
 
+mysql> USE mysql;
 
+mysql> CREATE USER 'ufabc_user'@'localhost' IDENTIFIED BY 'ale201903@daimler';
+
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'ufabc_user'@'localhost';
+
+mysql> UPDATE user SET plugin='auth_socket' WHERE User='ufabc_user';
+
+mysql> FLUSH PRIVILEGES;
+
+mysql> exit;
+
+mysql> SELECT User, Host, plugin FROM mysql.user;
+
+
+ALTER USER 'ufabc_user'@'localhost' IDENTIFIED WITH mysql_native_password BY 'youtube200903';
+
+sudo service mysql stop
+sudo service mysql start
 
 
