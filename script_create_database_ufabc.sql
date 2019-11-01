@@ -20,9 +20,10 @@ FOREIGN KEY (cod_categoria) REFERENCES tb_categoria(cod_categoria));
 INSERT INTO tb_usuario ( cod_usuario, nome, cod_categoria) VALUES ( '21017114', 'Nicolas Rafael Thales Moraes', 0), ( '21177133', 'Isabelle Beatriz Sales', 0), ( '13211721638', 'Débora Carla Olivia Barros', 0), ( '11201721630', 'Maitê Débora Teixeira', 1), ( '11201810614', 'Tânia Sabrina Gonçalves', 2), ( '11201810615', 'Agatha Stefany Sales', 3);
 
 CREATE TABLE tb_rfid (
-cod_usuario varchar(20) not null,
-cod_rfdi varchar(20) not null,
-PRIMARY KEY (cod_rfdi),
+id_rfid int NOT NULL AUTO_INCREMENT,
+cod_usuario varchar(20),
+cod_rfdi varchar(20),
+PRIMARY KEY (id_rfid),
 FOREIGN KEY (cod_usuario) REFERENCES tb_usuario(cod_usuario));
 
 INSERT INTO tb_rfid ( cod_rfdi, cod_usuario) VALUES ( '41 85 AF A9', '21017114'),( '42 85 AF A9', '21177133'),( '43 85 AF A9', '13211721638'),( '44 85 AF A9', '11201721630'),( '45 85 AF A9', '11201810614'),( '46 85 AF A9', '11201810615');
