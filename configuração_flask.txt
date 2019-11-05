@@ -138,4 +138,9 @@ ALTER USER 'ufabc_user'@'localhost' IDENTIFIED WITH mysql_native_password BY 'yo
 sudo service mysql stop
 sudo service mysql start
 
+8º Etapa 
 
+sudo git add *
+sudo git commit -m "mensagem do commit"
+sudo git push
+Digitar login e senha.
