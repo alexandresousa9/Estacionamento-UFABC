@@ -1,13 +1,9 @@
 /*
-   Curso de Arduino e AVR WR Kits Channel
+   Curso Engenharia Unificada II da UFABC
    
-   Aula 88 - RFID - Introdução
+   Controle Inteligento do Estacionamento da UFABC
    
-    
-   Autor: Eng. Wagner Rambo  Data: Outubro de 2016
-   
-   www.wrkits.com.br | facebook.com/wrkits | youtube.com/user/canalwrkits
-   
+   Autor: Alexandre de Sousa Santos  Data: Novembro de 2019
 */
 
 /* Bibliotecas auxiliares */
@@ -25,30 +21,7 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);   // Cria instância com MFRC522
 // --- Variáveis Globais --- 
 char st[20];
 
-void setup() {
-
-  Serial.begin(9600);   // Inicia comunicação Serial em 9600 baud rate
-  SPI.begin();          // Inicia comunicação SPI bus
-  mfrc522.PCD_Init();   // Inicia MFRC522
-  
-  Serial.println("Aproxime o seu cartao do leitor...");
-  Serial.println();
-  
-  digitalWrite(5, HIGH);
-  
-  // Initialize Serial port
-  Serial.begin(9600);
-  while (!Serial) continue;
-  
-  // Initialize Ethernet library
-  byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-  
-  if (!Ethernet.begin(mac)) {
-    Serial.println(F("Failed to configure Ethernet"));
-    return;
-  }
-  delay(1000);
-
+void connect_API(){
   Serial.println(F("Connecting..."));
 
   // Connect to HTTP server
@@ -132,6 +105,34 @@ void setup() {
 
   // Disconnect
   client.stop();
+}
+
+void setup() {
+
+  Serial.begin(9600);   // Inicia comunicação Serial em 9600 baud rate
+  SPI.begin();          // Inicia comunicação SPI bus
+  mfrc522.PCD_Init();   // Inicia MFRC522
+  
+  Serial.println("Aproxime o seu cartao do leitor...");
+  Serial.println();
+  
+  digitalWrite(5, HIGH);
+  
+  // Initialize Serial port
+  Serial.begin(9600);
+  while (!Serial) continue;
+  
+  // Initialize Ethernet library
+  byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
+  
+  if (!Ethernet.begin(mac)) {
+    Serial.println(F("Failed to configure Ethernet"));
+    return;
+  }
+  delay(1000);
+
+  connect_API();
+
 }
 
 void loop() {
