@@ -1,7 +1,7 @@
 /*
-   Curso Engenharia Unificada II da UFABC
+   Curso: Engenharia Unificada II da UFABC
    
-   Controle Inteligento do Estacionamento da UFABC
+   Controle Inteligente do Estacionamento da UFABC
    
    Autor: Alexandre de Sousa Santos  Data: Novembro de 2019
 */
@@ -11,42 +11,45 @@
 #include <UIPEthernet.h>
 #include <MFRC522.h>
 #include <SPI.h>
+#include <TimerOne.h>
 
 
-// --- Mapeamento de Hardware ---
+// --- Constantes do Programa ---
+#define VAGAS_ESTUDANTES 100 
+#define VAGAS_SERVIDORES 200
 #define SS_PIN 5
 #define RST_PIN 9
-MFRC522 mfrc522(SS_PIN, RST_PIN);   // Cria instância com MFRC522
+#define ETH_PIN 10
+#define RFID_PIN 8
 
-// --- Variáveis Globais --- 
-char st[20];
+// --- Variáveis Globais ---
+short before;
+short vagas_livres_estudante;
+short vagas_livres_servidor;;
 
-void connect_API(){
-  Serial.println(F("Connecting..."));
-
-  // Connect to HTTP server
-  EthernetClient client;
-  client.setTimeout(1000);
+// --- Mapeamento de Hardware ---
+MFRC522 mfrc522(SS_PIN, RST_PIN);  // Cria instância com MFRC522
   
-  if (!client.connect("34.95.241.108", 80)) {
-    Serial.println(F("Connection failed"));
-    return;
-  }
+// --- Funções utilizadas no programa --- //
+void registra_usuario(EthernetClient client, String RFID);
+void contador_time();
+void print_categoria(char* categoria);
+void print_permissao(char* permissao);
 
-  Serial.println(F("Connected!"));
+void registra_usuario(EthernetClient client, String RFID){
 
-  //if (client.available()) {
-  //  char c = client.read();
-  //  Serial.print(c);
-  //}else{
-  //  Serial.print(F("We don't connection avaliable!"));
-  //}
+  digitalWrite(SS_PIN, HIGH);
+  digitalWrite(ETH_PIN, LOW);
   
   // Send HTTP request
-  client.print("GET /UFABC/api/v1/estacionamento/vagas");
-  //client.print("46%2085%20AF%20A9");
-  client.println(" HTTP/1.0");
-  client.println(F("Host: 34.95.241.108"));
+  RFID = RFID.substring(0, 2) + "%20" + RFID.substring(3, 5) + "%20" + RFID.substring(6, 8) + "%20" + RFID.substring(9, 11);
+  //Serial.println(RFID);
+  
+  client.print("GET /UFABC/api/v1/estacionamento/arduino");
+  client.print("?cod_RFID=");
+  client.print(RFID);
+  client.println("&portaria=2 HTTP/1.0");
+  client.println(F("Host:34.95.241.108"));
   client.println(F("Connection: close"));
   if (client.println() == 0) {
     Serial.println(F("Failed to send request"));
@@ -62,22 +65,20 @@ void connect_API(){
     return;
   }
 
+  //char status2[100] = {0};
+  //client.readBytesUntil('}', status2, sizeof(status2));
+  //Serial.println(status2);
+
   // Skip HTTP headers
   char endOfHeaders[] = "\r\n\r\n";
   if (!client.find(endOfHeaders)) {
     Serial.println(F("Invalid response"));
     return;
   }
-
-  // Utilizado em testes
-  //char c = client.read();
-  //c = client.read();
-  //Serial.print(c);
   
   // Allocate JsonBuffer
   // Use arduinojson.org/assistant to compute the capacity.
-  const size_t capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(20) + 60;
-  //const size_t capacity = JSON_OBJECT_SIZE(5);
+  const size_t capacity = JSON_OBJECT_SIZE(5) + 50;
   DynamicJsonBuffer jsonBuffer(capacity);
 
   // Parse JSON object
@@ -87,41 +88,83 @@ void connect_API(){
     return;
   }
 
-  // Extract values
-  //Serial.println(F("Response:"));
-  //Serial.println(root["cod_rfid"].as<char*>());
-  //Serial.println(root["cod_usuario"].as<char*>());
-  //Serial.println(root["nome"].as<char*>());
-  //Serial.println(root["descricao"].as<char*>());
-  //Serial.println(root["data"][1].as<char*>());
+  //Informações do usuário
+  char* codigo = root["cod"];
+  char* permissao = root["auth"];
+  char* categoria = root["group"];
+  short vagas_ocupadas_estudantes = root["amt_a"];
+  short vagas_ocupadas_servidores = root["amt_s"];
 
-  //Vagas ocupadas
-  Serial.println(F("Response:"));
-  Serial.println(root["Retorno"].as<char*>());
-  Serial.println(root["Status"].as<char*>());
-  Serial.println(root["Vagas_Ocupadas"].as<char*>());
-  //Serial.println(root["descricao"].as<char*>());
-  //Serial.println(root["data"][1].as<char*>());
+  if (codigo[0] != '-'){
+    
+    Serial.print(F("Registro do "));
+    print_categoria(categoria);
+    Serial.print(F(": "));
+    Serial.println(codigo);
+  }
+
+  vagas_livres_estudante = VAGAS_ESTUDANTES - vagas_ocupadas_estudantes;
+  vagas_livres_servidor = VAGAS_SERVIDORES - vagas_ocupadas_servidores;
+  
+  Serial.print(F("Quantidade de vagas livres para estudantes: "));
+  Serial.println(vagas_livres_estudante);
+
+  Serial.print(F("Quantidade de vagas livres para servidores: "));
+  Serial.println(vagas_livres_servidor);
+  
+  print_permissao(permissao);
 
   // Disconnect
   client.stop();
+
+  digitalWrite(SS_PIN, LOW);
+  digitalWrite(ETH_PIN, HIGH);
 }
+
+void print_categoria(char* categoria){
+  if (*categoria == '0'){
+    Serial.print(F("Aluno"));
+  }else if(*categoria == '1'){
+    Serial.print(F("Professor"));
+  }else if(*categoria == '2'){
+    Serial.print(F("Técnico"));
+  }else if(*categoria == '3'){
+    Serial.print(F("Visitante"));
+  }else{
+    Serial.print(F("-1"));
+  }
+}
+
+void print_permissao(char* permissao){
+  if (*permissao == '1'){
+    Serial.println(F("ENTRADA AUTORIZADA"));
+  }else if(*permissao == '2'){
+    Serial.println(F("ENTRADA NEGADA : Usuário não possui cadastro no estacionamento da UFABC"));
+  }else if(*permissao == '3'){
+    Serial.println(F("SAÍDA AUTORIZADA"));
+  }else{
+    Serial.println(F("Código de permissão não cadastrado"));
+  }
+}
+
 
 void setup() {
 
+  //Define a porta do led como saida
+  pinMode(RFID_PIN, OUTPUT);
+  digitalWrite(RFID_PIN, HIGH);
+  
   Serial.begin(9600);   // Inicia comunicação Serial em 9600 baud rate
   SPI.begin();          // Inicia comunicação SPI bus
   mfrc522.PCD_Init();   // Inicia MFRC522
   
-  Serial.println("Aproxime o seu cartao do leitor...");
   Serial.println();
-  
-  digitalWrite(5, HIGH);
+  Serial.println(F("Aproxime o seu cartao do leitor..."));
   
   // Initialize Serial port
   Serial.begin(9600);
   while (!Serial) continue;
-  
+
   // Initialize Ethernet library
   byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
   
@@ -129,14 +172,13 @@ void setup() {
     Serial.println(F("Failed to configure Ethernet"));
     return;
   }
-  delay(1000);
-
-  connect_API();
-
+  
+  Timer1.initialize(5000000);
+  Timer1.attachInterrupt(contador_time);
 }
 
 void loop() {
-
+  
   // Verifica novos cartões
   if ( ! mfrc522.PICC_IsNewCardPresent())
   {
@@ -149,32 +191,47 @@ void loop() {
   }
   
   // Mostra UID na serial
-  Serial.print("UID da tag :");
   String conteudo= "";
-  byte letra;
   for (byte i = 0; i < mfrc522.uid.size; i++) 
   {
-     Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     Serial.print(mfrc522.uid.uidByte[i], HEX);
      conteudo.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
      conteudo.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
-  Serial.println();
-  Serial.print("Mensagem : ");
+
   conteudo.toUpperCase();
   
-  if (conteudo.substring(1) == "91 7D FC 2F") //UID 1 - Chaveiro
-  {
-    Serial.println("Chaveiro identificado!");
+  if (before > 10){
+
+    //Apaga o LED
+    digitalWrite(RFID_PIN, LOW);
+    
+    before = 0;
+
+    Serial.print(F("Tag RFID lida: "));
+    Serial.println(conteudo.substring(1));
+    
+    Serial.println(F("Connecting..."));
+    
+    // Connect to HTTP server
+    EthernetClient client;
+    client.setTimeout(1000);
+      
+    if (!client.connect("34.95.241.108", 80)) {
+      Serial.println(F("Connection failed"));
+      return;
+    }
+    
+    Serial.println(F("Connected!"));
+    
+    registra_usuario(client, conteudo.substring(1));
     Serial.println();
-    delay(3000);
-     
   }
- 
-  if (conteudo.substring(1) == "54 DB 03 C5") //UID 2 - Cartao
-  {
-    Serial.println("Cartao identificado");
-    Serial.println();
-    delay(3000);
-  }
+}
+
+
+void contador_time(){
+  before+=12;
+  digitalWrite(RFID_PIN, HIGH);
+  //Serial.print(F("Time atual: "));
+  //Serial.println(before);
 }
