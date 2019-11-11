@@ -144,3 +144,6 @@ sudo git add *
 sudo git commit -m "mensagem do commit"
 sudo git push
 Digitar login e senha.
+
+#Caixa para guardar .
+caixa steck
